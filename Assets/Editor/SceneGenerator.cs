@@ -16,33 +16,33 @@ public class SceneGenerator : EditorWindow
 
     private void OnGUI()
     {
-        GUILayout.Label("Shadowrift Chronicles - Scene Generator", EditorStyles.boldLabel);
+        GUILayout.Label("Shadowrift Chronicles - Full Scene Generator", EditorStyles.boldLabel);
         GUILayout.Space(10);
 
         EditorGUILayout.HelpBox(
-            "This tool creates all required scenes and automatically attaches the correct scripts.\n\n" +
-            "Make sure all scripts have finished compiling before running.", 
+            "Creates all scenes, attaches scripts, and auto-wires the most important references.\n\n" +
+            "Run this after all scripts have finished compiling.",
             MessageType.Info);
 
         GUILayout.Space(15);
 
-        if (GUILayout.Button("Generate All Scenes + Attach Scripts", GUILayout.Height(45)))
+        if (GUILayout.Button("Generate All Scenes (Full Setup)", GUILayout.Height(50)))
         {
             GenerateAllScenes();
         }
 
-        GUILayout.Space(10);
+        GUILayout.Space(8);
 
         if (GUILayout.Button("Generate Main Menu Only"))
         {
             CreateMainMenuScene();
-            EditorUtility.DisplayDialog("Done", "MainMenu scene created and configured!", "OK");
+            EditorUtility.DisplayDialog("Done", "MainMenu created.", "OK");
         }
 
         if (GUILayout.Button("Generate All Realm Scenes"))
         {
             CreateRealmScenes();
-            EditorUtility.DisplayDialog("Done", "All Realm scenes created and configured!", "OK");
+            EditorUtility.DisplayDialog("Done", "All realm scenes created.", "OK");
         }
     }
 
@@ -53,16 +53,13 @@ public class SceneGenerator : EditorWindow
         AddScenesToBuildSettings();
 
         EditorUtility.DisplayDialog("Success",
-            "All scenes generated successfully!\n\n" +
+            "All scenes generated with scripts + auto-wiring!\n\n" +
             "✓ MainMenu\n" +
-            "✓ Realm_01_NeoArcadia\n" +
-            "✓ Realm_02_Wildlands\n" +
-            "✓ Realm_03_Clockwork\n" +
-            "✓ Realm_04_BoneDesert\n" +
-            "✓ Realm_05_CrystalSanctum\n" +
-            "✓ Realm_06_RealityStorm\n\n" +
-            "Scripts have been automatically attached where possible.\n" +
-            "Scenes added to Build Settings.", "OK");
+            "✓ 5 Realms + Reality Storm\n" +
+            "✓ Scripts attached\n" +
+            "✓ Key references wired\n" +
+            "✓ Added to Build Settings\n\n" +
+            "Open any realm scene and check the GameSystems object.", "OK");
     }
 
     private static void CreateMainMenuScene()
@@ -79,25 +76,20 @@ public class SceneGenerator : EditorWindow
         canvasGO.AddComponent<UnityEngine.UI.CanvasScaler>();
         canvasGO.AddComponent<UnityEngine.UI.GraphicRaycaster>();
 
-        // Event System
-        new GameObject("EventSystem", 
-            typeof(UnityEngine.EventSystems.EventSystem), 
+        new GameObject("EventSystem",
+            typeof(UnityEngine.EventSystems.EventSystem),
             typeof(UnityEngine.EventSystems.StandaloneInputModule));
 
-        // Main Menu Controller
         var controllerGO = new GameObject("MainMenuController");
         AddScriptIfExists(controllerGO, "MainMenuController");
 
-        // Title
         CreateUIText(canvasGO.transform, "Title", "SHADOWRIFT CHRONICLES", 52, new Vector2(0, 220));
-
-        // Buttons
-        var newGameBtn = CreateUIButton(canvasGO.transform, "NewGameButton", "New Game", new Vector2(0, 60));
-        var continueBtn = CreateUIButton(canvasGO.transform, "ContinueButton", "Continue", new Vector2(0, -20));
-        var quitBtn = CreateUIButton(canvasGO.transform, "QuitButton", "Quit", new Vector2(0, -100));
+        CreateUIButton(canvasGO.transform, "NewGameButton", "New Game", new Vector2(0, 60));
+        CreateUIButton(canvasGO.transform, "ContinueButton", "Continue", new Vector2(0, -20));
+        CreateUIButton(canvasGO.transform, "QuitButton", "Quit", new Vector2(0, -100));
 
         EditorSceneManager.SaveScene(scene, path);
-        Debug.Log("Created + configured: " + path);
+        Debug.Log("Created: " + path);
     }
 
     private static void CreateRealmScenes()
@@ -112,12 +104,12 @@ public class SceneGenerator : EditorWindow
         };
 
         Color[] backgroundColors = {
-            new Color(0.08f, 0.12f, 0.28f),  // Neo-Arcadia
-            new Color(0.04f, 0.18f, 0.09f),  // Wildlands
-            new Color(0.18f, 0.18f, 0.22f),  // Clockwork
-            new Color(0.22f, 0.15f, 0.08f),  // Bone Desert
-            new Color(0.12f, 0.08f, 0.28f),  // Crystal Sanctum
-            new Color(0.28f, 0.04f, 0.32f)   // Reality Storm
+            new Color(0.08f, 0.12f, 0.28f),
+            new Color(0.04f, 0.18f, 0.09f),
+            new Color(0.18f, 0.18f, 0.22f),
+            new Color(0.22f, 0.15f, 0.08f),
+            new Color(0.12f, 0.08f, 0.28f),
+            new Color(0.28f, 0.04f, 0.32f)
         };
 
         EnsureScenesFolder();
@@ -133,7 +125,7 @@ public class SceneGenerator : EditorWindow
         string path = "Assets/Scenes/" + sceneName + ".unity";
         var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
 
-        // Camera setup
+        // Camera
         Camera.main.backgroundColor = bgColor;
         Camera.main.orthographic = true;
         Camera.main.orthographicSize = 5.5f;
@@ -141,20 +133,26 @@ public class SceneGenerator : EditorWindow
         // ========== GameSystems ==========
         var systems = new GameObject("GameSystems");
 
-        // Attach core scripts
-        AddScriptIfExists(systems, "GameManager");
-        AddScriptIfExists(systems, "PhasingManager");
-        AddScriptIfExists(systems, "StanceManager");
-        AddScriptIfExists(systems, "LoyaltyManager");
-        AddScriptIfExists(systems, "ScoreManager");
-        AddScriptIfExists(systems, "AudioManager");
-        AddScriptIfExists(systems, "RealmLoader");
-        AddScriptIfExists(systems, "RealmProgression");
+        var gameManager = AddScriptIfExists(systems, "GameManager");
+        var phasingManager = AddScriptIfExists(systems, "PhasingManager");
+        var stanceManager = AddScriptIfExists(systems, "StanceManager");
+        var loyaltyManager = AddScriptIfExists(systems, "LoyaltyManager");
+        var scoreManager = AddScriptIfExists(systems, "ScoreManager");
+        var audioManager = AddScriptIfExists(systems, "AudioManager");
+        var realmLoader = AddScriptIfExists(systems, "RealmLoader");
+        var realmProgression = AddScriptIfExists(systems, "RealmProgression");
 
         // ========== Layers ==========
         var baseLayer = new GameObject("BaseLayer");
         var phaseLayer = new GameObject("PhaseLayer");
         phaseLayer.SetActive(false);
+
+        // Auto-wire PhasingManager layers
+        if (phasingManager != null)
+        {
+            SetPrivateOrPublicField(phasingManager, "baseLayer", baseLayer);
+            SetPrivateOrPublicField(phasingManager, "phaseLayer", phaseLayer);
+        }
 
         // ========== Player ==========
         var player = new GameObject("Player");
@@ -166,8 +164,17 @@ public class SceneGenerator : EditorWindow
         player.AddComponent<CapsuleCollider2D>();
         player.transform.position = Vector3.zero;
 
-        AddScriptIfExists(player, "PlayerController");
-        AddScriptIfExists(player, "PlayerHealth");
+        var playerController = AddScriptIfExists(player, "PlayerController");
+        var playerHealth = AddScriptIfExists(player, "PlayerHealth");
+
+        // Wire GameManager references
+        if (gameManager != null)
+        {
+            SetPrivateOrPublicField(gameManager, "phasingManager", phasingManager);
+            SetPrivateOrPublicField(gameManager, "stanceManager", stanceManager);
+            SetPrivateOrPublicField(gameManager, "loyaltyManager", loyaltyManager);
+            SetPrivateOrPublicField(gameManager, "playerController", playerController);
+        }
 
         // ========== Enemy Spawner ==========
         var spawner = new GameObject("EnemySpawner");
@@ -177,9 +184,8 @@ public class SceneGenerator : EditorWindow
         {
             var point = new GameObject("SpawnPoint_" + i);
             point.transform.SetParent(spawner.transform);
-            float x = Mathf.Cos(i * Mathf.PI * 2f / 6f) * 6f;
-            float y = Mathf.Sin(i * Mathf.PI * 2f / 6f) * 3.5f;
-            point.transform.position = new Vector3(x, y, 0);
+            float angle = i * Mathf.PI * 2f / 6f;
+            point.transform.position = new Vector3(Mathf.Cos(angle) * 6.5f, Mathf.Sin(angle) * 3.8f, 0);
         }
 
         // ========== UI ==========
@@ -193,9 +199,8 @@ public class SceneGenerator : EditorWindow
             typeof(UnityEngine.EventSystems.EventSystem),
             typeof(UnityEngine.EventSystems.StandaloneInputModule));
 
-        // UI Manager
         var uiManagerGO = new GameObject("UIManager");
-        uiManagerGO.transform.SetParent(canvasGO.transform);
+        uiManagerGO.transform.SetParent(canvasGO.transform, false);
         AddScriptIfExists(uiManagerGO, "UIManager");
 
         CreateUIText(canvasGO.transform, "LoyaltyText", "Loyalty: 65", 22, new Vector2(-700, 450));
@@ -208,7 +213,7 @@ public class SceneGenerator : EditorWindow
         var handManager = new GameObject("HandGestureManager");
         AddScriptIfExists(handManager, "QuestHandGestureManager");
 
-        // ========== Final Boss ==========
+        // ========== Final Realm extras ==========
         if (isFinalRealm)
         {
             var bossSpawner = new GameObject("BossSpawner");
@@ -218,20 +223,18 @@ public class SceneGenerator : EditorWindow
             bossPoint.transform.SetParent(bossSpawner.transform);
             bossPoint.transform.position = new Vector3(0, 3.5f, 0);
 
-            // Ending Manager
             var endingGO = new GameObject("EndingManager");
             AddScriptIfExists(endingGO, "EndingManager");
         }
 
         EditorSceneManager.SaveScene(scene, path);
-        Debug.Log("Created + configured: " + path);
+        Debug.Log("Created + wired: " + path);
     }
 
     // -------------------- Helpers --------------------
 
-    private static void AddScriptIfExists(GameObject target, string className)
+    private static Component AddScriptIfExists(GameObject target, string className)
     {
-        // Find the MonoScript by class name
         string[] guids = AssetDatabase.FindAssets(className + " t:MonoScript");
 
         foreach (string guid in guids)
@@ -241,13 +244,38 @@ public class SceneGenerator : EditorWindow
 
             if (script != null && script.GetClass() != null && script.GetClass().Name == className)
             {
-                target.AddComponent(script.GetClass());
+                var component = target.AddComponent(script.GetClass());
                 Debug.Log($"Attached {className} to {target.name}");
-                return;
+                return component;
             }
         }
 
-        Debug.LogWarning($"Could not find script: {className}. You will need to attach it manually.");
+        Debug.LogWarning($"Could not find script: {className}");
+        return null;
+    }
+
+    private static void SetPrivateOrPublicField(Component comp, string fieldName, Object value)
+    {
+        if (comp == null) return;
+
+        var type = comp.GetType();
+        var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+        if (field != null)
+        {
+            field.SetValue(comp, value);
+            Debug.Log($"Wired {comp.GetType().Name}.{fieldName}");
+        }
+        else
+        {
+            // Try property
+            var prop = type.GetProperty(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            if (prop != null && prop.CanWrite)
+            {
+                prop.SetValue(comp, value);
+                Debug.Log($"Wired property {comp.GetType().Name}.{fieldName}");
+            }
+        }
     }
 
     private static void CreateUIText(Transform parent, string name, string text, int fontSize, Vector2 position)
@@ -325,7 +353,7 @@ public class SceneGenerator : EditorWindow
         }
 
         EditorBuildSettings.scenes = buildScenes;
-        Debug.Log("All scenes added to Build Settings.");
+        Debug.Log("Scenes added to Build Settings.");
     }
 }
 #endif
