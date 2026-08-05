@@ -1,44 +1,49 @@
 # Shadowrift Chronicles
 
-**Unity 2D/2.5D Action-Adventure** with seamless dimensional phasing, Voidblade combat, Luna Loyalty system, and Meta Quest VR support.
+**Unity 2D / 2.5D Action-Adventure Game**  
+Seamless dimensional phasing • Voidblade combat • Luna Loyalty system • Meta Quest VR support
 
 ---
 
-## Features
+## Overview
 
-- **Dimensional Phasing** – Instantly switch between two reality layers
-- **Voidblade Stances** – Ravager, Sentinel, Harmonist
-- **Luna Loyalty System** – Choices affect the world and determine the ending
-- **5 Realms** + Reality Storm final boss
-- **Multiple Enemy Types** – Aggressive, Ranged, Loyalty-sensitive
-- **Meta Quest Hand Tracking** – Pinch, swipe, and open palm gestures
-- Full UI, Audio, Score, Health, Save/Load, and Ending systems
+Shadowrift Chronicles is a complete game prototype built from a full Game Design Document. Players control Zara Nightfall, a dimension-hopping mercenary who can phase between two overlapping realities while wielding the sentient Voidblade.
+
+### Core Features
+- **Dimensional Phasing** – Instantly switch between Base Reality and Phase Reality
+- **Voidblade Stances** – Ravager (aggressive), Sentinel (defensive), Harmonist (balanced)
+- **Luna Loyalty System** – Your actions affect Luna and determine one of three endings
+- **5 Distinct Realms** + Reality Storm final boss
+- **Multiple Enemy Types** with layer-based behavior
+- **Meta Quest Hand Tracking** – Natural gesture controls
+- Full UI, Audio, Health, Score, Save/Load, and Ending systems
 
 ---
 
-## Getting Started
+## Quick Start
 
 ### Requirements
-- Unity **6000.3 LTS** or newer (2D URP template recommended)
+- Unity **6000.3 LTS** or newer
+- Template: **2D (URP)** recommended
 - Meta Quest 2 / 3 / 3S (for hand tracking)
 
 ### Required Packages
-- XR Plugin Management
-- OpenXR
-- XR Hands
-- XR Interaction Toolkit
-- Input System
-- TextMeshPro
-- Addressables (optional)
-- Meta XR Core SDK (recommended for best Quest support)
+| Package                    | Purpose                        |
+|---------------------------|--------------------------------|
+| XR Plugin Management      | XR foundation                  |
+| OpenXR                    | Cross-platform XR              |
+| XR Hands                  | Hand tracking                  |
+| XR Interaction Toolkit    | Interactions                   |
+| Input System              | Modern input                   |
+| TextMeshPro                | UI text                        |
+| Meta XR Core SDK          | Best Quest support (optional)  |
 
-### Setup Steps
-1. Clone this repository
+### Installation
+1. Clone the repository
 2. Open the project in Unity Hub
-3. Install the required packages listed above
-4. Open `Assets/Scenes/` and create the realm scenes if they don't exist yet
-5. Set up a Canvas and assign UI references to `UIManager`
-6. Build for Android and deploy to your Meta Quest
+3. Install the packages listed above via Package Manager
+4. Follow the **Scene Setup Guide** (`Docs/SCENE_SETUP.md`)
+5. Build for Android and deploy to your Meta Quest
 
 ---
 
@@ -46,16 +51,16 @@
 
 ### Keyboard / Gamepad
 - **WASD / Left Stick** – Move
-- **Space / A Button** – Phase Shift
-- **1 / 2 / 3** – Switch Stances
+- **Space / South Button** – Phase Shift
+- **1 / 2 / 3** – Switch Stances (Ravager / Sentinel / Harmonist)
 
 ### Meta Quest Hand Tracking
-| Gesture                    | Action                     |
-|---------------------------|----------------------------|
-| Right Hand Pinch          | Voidblade Attack           |
-| Left Hand Swipe Right     | Ravager Stance             |
-| Left Hand Swipe Left      | Sentinel Stance            |
-| Both Hands Open Palm      | Dimensional Phase Shift    |
+| Gesture                  | Action                      |
+|-------------------------|-----------------------------|
+| Right Hand Pinch        | Voidblade Attack            |
+| Left Hand Swipe Right   | Ravager Stance              |
+| Left Hand Swipe Left    | Sentinel Stance             |
+| Both Hands Open Palm    | Dimensional Phase Shift     |
 
 ---
 
@@ -64,18 +69,19 @@
 ```
 Assets/
 ├── Scripts/
-│   ├── Core/           # GameManager, Phasing, Stance, Loyalty, Audio, Save, Realm
-│   ├── Mechanics/      # Player, Enemies, Projectiles, Hand Tracking, Boss
-│   └── UI/             # UIManager, MainMenu, Ending
-├── Scenes/             # Realm scenes (create these)
-└── Art/                # Place your sprites and effects here
+│   ├── Core/               # GameManager, Phasing, Stance, Loyalty, Audio, Save, Realm systems
+│   ├── Mechanics/          # Player, Enemies, Projectiles, Hand Tracking, Boss
+│   └── UI/                 # UIManager, MainMenu, Ending
+├── Scenes/                 # Create realm scenes here
+├── Art/                    # Sprites, effects, UI art
+└── Prefabs/                # Enemy and projectile prefabs
 ```
 
 ---
 
-## Current Systems Included
+## Systems Included
 
-- GameManager
+- GameManager (singleton)
 - PhasingManager
 - StanceManager
 - LoyaltyManager
@@ -84,7 +90,8 @@ Assets/
 - AggressiveEnemy / RangedEnemy / LoyaltyEnemy
 - Projectile system
 - EnemyDeathHandler + ScoreManager
-- RealityStormBoss
+- RealityStormBoss + BossSpawner
+- EnemySpawner
 - RealmLoader + RealmProgression
 - AudioManager
 - UIManager
@@ -94,8 +101,15 @@ Assets/
 
 ---
 
+## Documentation
+
+- [Scene Setup Guide](Docs/SCENE_SETUP.md)
+- [Hand Tracking Setup](Assets/Scripts/Mechanics/HandTrackingSetup.md)
+
+---
+
 ## License
 
-This project was built collaboratively as a full Game Design Document implementation. Feel free to use and expand it.
+This project was created as a collaborative implementation of a full Game Design Document. You are free to use, modify, and expand it.
 
-**Created for the Shadowrift Chronicles GDD.**
+**Shadowrift Chronicles** – Reality is a weapon. Use it wisely.
