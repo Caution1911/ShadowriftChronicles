@@ -3,30 +3,25 @@ using UnityEngine.XR.Hands;
 using System.Collections.Generic;
 
 /// <summary>
-/// Meta Quest 3 optimized Hand Tracking Gesture Manager for Shadowrift Chronicles.
-/// Gestures:
-/// - Right Hand Pinch          = Voidblade Attack
-/// - Left Hand Swipe Left/Right = Stance switch (Sentinel / Ravager)
-/// - Both Hands Open Palm      = Dimensional Phase Shift
-/// - Right Hand Thumbs Up      = Harmonist Stance
-/// Tuned thresholds for Quest 3 hand tracking.
+/// Performance-optimized Meta Quest 3 hand tracking for Shadowrift Chronicles.
+/// Goals: minimal per-frame cost, zero GC in steady state, reliable gestures.
 /// </summary>
 public class QuestHandGestureManager : MonoBehaviour
 {
     [Header("Subsystem")]
     private XRHandSubsystem handSubsystem;
+    private bool subsystemReady;
 
-    [Header("Pinch (Attack) - Quest 3 tuned")]
-    [Tooltip("Distance between thumb tip and index tip (meters)")]
+    [Header("Pinch (Attack)")]
     public float pinchThreshold = 0.028f;
     public float attackCooldown = 0.35f;
 
-    [Header("Swipe (Stance) - Quest 3 tuned")]
+    [Header("Swipe (Stance)")]
     public float swipeDistanceThreshold = 0.16f;
     public float swipeCooldown = 0.65f;
     public float minSwipeSpeed = 0.8f;
 
-    [Header("Open Palm (Phase) - Quest 3 tuned")]
+    [Header("Open Palm (Phase)")]
     public float openPalmMinFingerDistance = 0.055f;
     public int requiredExtendedFingers = 3;
     public float phaseCooldown = 0.9f;
@@ -35,175 +30,214 @@ public class QuestHandGestureManager : MonoBehaviour
     [Header("Thumbs Up (Harmonist)")]
     public float thumbsUpCooldown = 0.8f;
 
-    [Header("Debug")]
-    public bool debugLogs = true;
+    [Header("Performance")]
+    [Tooltip("How often non-critical gestures are evaluated (seconds). Attack/pinch stays every frame.")]
+    public float secondaryGestureInterval = 0.033f; // ~30 Hz
+    public bool debugLogs = false;
 
-    // Internal state
-    private Vector3 leftPalmPrevPos;
-    private float leftPalmPrevTime;
+    // Timing
     private float lastSwipeTime;
     private float lastAttackTime;
     private float lastPhaseTime;
     private float lastThumbsUpTime;
     private float openPalmTimer;
+    private float nextSecondaryCheckTime;
+
+    // Swipe tracking (no allocations)
+    private Vector3 leftPalmPrevPos;
+    private float leftPalmPrevTime;
+    private bool hasLeftPalmPrev;
+
+    // Cached poses (reused every frame)
+    private Pose cachedPalm;
+    private Pose cachedThumb;
+    private Pose cachedIndex;
+    private Pose cachedMiddle;
+    private Pose cachedRing;
+    private Pose cachedLittle;
 
     private void Start()
     {
-        var subsystems = new List<XRHandSubsystem>();
-        SubsystemManager.GetSubsystems(subsystems);
+        ResolveSubsystem();
+        leftPalmPrevTime = Time.time;
+        nextSecondaryCheckTime = 0f;
+    }
 
+    private void OnEnable()
+    {
+        // Re-resolve if domain reload / subsystem restart
+        if (!subsystemReady)
+            ResolveSubsystem();
+    }
+
+    private void ResolveSubsystem()
+    {
+        var subsystems = new List<XRHandSubsystem>(1);
+        SubsystemManager.GetSubsystems(subsystems);
         if (subsystems.Count > 0)
         {
             handSubsystem = subsystems[0];
-            if (debugLogs) Debug.Log("[Shadowrift] XR Hand Subsystem ready (Quest 3).");
+            subsystemReady = true;
+            if (debugLogs)
+                Debug.Log("[Shadowrift] Hand subsystem ready.");
         }
         else
         {
-            Debug.LogWarning("[Shadowrift] No XR Hand Subsystem found. Enable XR Hands + OpenXR Meta Quest Support.");
+            subsystemReady = false;
+            handSubsystem = null;
+            if (debugLogs)
+                Debug.LogWarning("[Shadowrift] No XRHandSubsystem. Check XR Hands + OpenXR Meta Quest Support.");
         }
-
-        leftPalmPrevPos = Vector3.zero;
-        leftPalmPrevTime = Time.time;
     }
 
     private void Update()
     {
-        if (handSubsystem == null || !handSubsystem.running) return;
+        // Cheap early-outs
+        if (!subsystemReady || handSubsystem == null)
+            return;
 
-        // Right hand pinch = Attack
-        if (IsPinching(XRHandedness.Right) && Time.time - lastAttackTime > attackCooldown)
+        if (!handSubsystem.running)
+            return;
+
+        float now = Time.time;
+
+        // --- High priority: attack pinch every frame (responsive combat) ---
+        if (now - lastAttackTime >= attackCooldown)
         {
-            PerformAttack();
-            lastAttackTime = Time.time;
-        }
-
-        // Left hand swipe = Stance
-        DetectSwipe(XRHandedness.Left);
-
-        // Both hands open palm (held briefly) = Phase
-        if (IsOpenPalm(XRHandedness.Left) && IsOpenPalm(XRHandedness.Right))
-        {
-            openPalmTimer += Time.deltaTime;
-            if (openPalmTimer >= openPalmHoldTime && Time.time - lastPhaseTime > phaseCooldown)
+            if (IsPinching(XRHandedness.Right))
             {
-                TriggerPhase();
-                lastPhaseTime = Time.time;
-                openPalmTimer = 0f;
+                PerformAttack();
+                lastAttackTime = now;
             }
         }
-        else
-        {
-            openPalmTimer = 0f;
-        }
 
-        // Right hand thumbs up = Harmonist
-        if (IsThumbsUp(XRHandedness.Right) && Time.time - lastThumbsUpTime > thumbsUpCooldown)
+        // --- Secondary gestures at reduced rate (~30 Hz) to save CPU ---
+        if (now < nextSecondaryCheckTime)
+            return;
+
+        nextSecondaryCheckTime = now + secondaryGestureInterval;
+
+        DetectSwipe(XRHandedness.Left, now);
+        UpdateOpenPalmPhase(now);
+
+        if (now - lastThumbsUpTime >= thumbsUpCooldown && IsThumbsUp(XRHandedness.Right))
         {
             GameManager.Instance?.stanceManager?.SwitchStance(Stance.Harmonist);
             AudioManager.Instance?.PlayStanceSwitch();
-            TriggerHaptic(0.4f, 0.08f);
-            lastThumbsUpTime = Time.time;
-            if (debugLogs) Debug.Log("[Shadowrift] Thumbs Up → Harmonist Stance");
+            lastThumbsUpTime = now;
+            if (debugLogs)
+                Debug.Log("[Shadowrift] Thumbs Up → Harmonist");
         }
     }
 
-    // -------------------- Gesture Detection (Quest 3 tuned) --------------------
+    // -------------------- Gestures (allocation-free) --------------------
 
-    private bool IsPinching(XRHandedness handedness)
+    private bool IsPinching(XRHandedness hand)
     {
-        if (!TryGetJoint(XRHandJointID.ThumbTip, handedness, out var thumb))
+        if (!TryGetPose(XRHandJointID.ThumbTip, hand, ref cachedThumb))
             return false;
-        if (!TryGetJoint(XRHandJointID.IndexTip, handedness, out var index))
+        if (!TryGetPose(XRHandJointID.IndexTip, hand, ref cachedIndex))
             return false;
 
-        float distance = Vector3.Distance(thumb.position, index.position);
-        return distance < pinchThreshold;
+        float dx = cachedThumb.position.x - cachedIndex.position.x;
+        float dy = cachedThumb.position.y - cachedIndex.position.y;
+        float dz = cachedThumb.position.z - cachedIndex.position.z;
+        float distSq = dx * dx + dy * dy + dz * dz;
+        float thresh = pinchThreshold * pinchThreshold;
+        return distSq < thresh;
     }
 
-    private bool IsOpenPalm(XRHandedness handedness)
+    private bool IsOpenPalm(XRHandedness hand)
     {
-        if (!TryGetJoint(XRHandJointID.Palm, handedness, out var palm))
+        if (!TryGetPose(XRHandJointID.Palm, hand, ref cachedPalm))
             return false;
-
-        XRHandJointID[] tips =
-        {
-            XRHandJointID.IndexTip,
-            XRHandJointID.MiddleTip,
-            XRHandJointID.RingTip,
-            XRHandJointID.LittleTip
-        };
 
         int extended = 0;
-        foreach (var tipId in tips)
-        {
-            if (TryGetJoint(tipId, handedness, out var tip))
-            {
-                float dist = Vector3.Distance(tip.position, palm.position);
-                if (dist > openPalmMinFingerDistance)
-                    extended++;
-            }
-        }
+        float minDist = openPalmMinFingerDistance;
+        float minDistSq = minDist * minDist;
+
+        if (TryGetPose(XRHandJointID.IndexTip, hand, ref cachedIndex) &&
+            DistanceSq(cachedIndex.position, cachedPalm.position) > minDistSq)
+            extended++;
+
+        if (TryGetPose(XRHandJointID.MiddleTip, hand, ref cachedMiddle) &&
+            DistanceSq(cachedMiddle.position, cachedPalm.position) > minDistSq)
+            extended++;
+
+        if (TryGetPose(XRHandJointID.RingTip, hand, ref cachedRing) &&
+            DistanceSq(cachedRing.position, cachedPalm.position) > minDistSq)
+            extended++;
+
+        if (TryGetPose(XRHandJointID.LittleTip, hand, ref cachedLittle) &&
+            DistanceSq(cachedLittle.position, cachedPalm.position) > minDistSq)
+            extended++;
 
         return extended >= requiredExtendedFingers;
     }
 
-    private bool IsThumbsUp(XRHandedness handedness)
+    private bool IsThumbsUp(XRHandedness hand)
     {
-        // Simple heuristic: thumb tip significantly above palm, other fingers closer to palm
-        if (!TryGetJoint(XRHandJointID.Palm, handedness, out var palm))
+        if (!TryGetPose(XRHandJointID.Palm, hand, ref cachedPalm))
             return false;
-        if (!TryGetJoint(XRHandJointID.ThumbTip, handedness, out var thumb))
+        if (!TryGetPose(XRHandJointID.ThumbTip, hand, ref cachedThumb))
             return false;
 
-        // Thumb should be clearly extended upward relative to palm
-        Vector3 localUp = Vector3.up;
-        float thumbHeight = Vector3.Dot(thumb.position - palm.position, localUp);
+        // Thumb clearly above palm in world up
+        float thumbHeight = cachedThumb.position.y - cachedPalm.position.y;
+        if (thumbHeight < 0.06f)
+            return false;
 
-        if (thumbHeight < 0.06f) return false;
-
-        // Other fingertips should not be fully extended (fist-like except thumb)
+        float curlLimit = openPalmMinFingerDistance * 0.85f;
+        float curlLimitSq = curlLimit * curlLimit;
         int curled = 0;
-        XRHandJointID[] tips = { XRHandJointID.IndexTip, XRHandJointID.MiddleTip, XRHandJointID.RingTip };
-        foreach (var tipId in tips)
-        {
-            if (TryGetJoint(tipId, handedness, out var tip))
-            {
-                float dist = Vector3.Distance(tip.position, palm.position);
-                if (dist < openPalmMinFingerDistance * 0.85f)
-                    curled++;
-            }
-        }
+
+        if (TryGetPose(XRHandJointID.IndexTip, hand, ref cachedIndex) &&
+            DistanceSq(cachedIndex.position, cachedPalm.position) < curlLimitSq)
+            curled++;
+
+        if (TryGetPose(XRHandJointID.MiddleTip, hand, ref cachedMiddle) &&
+            DistanceSq(cachedMiddle.position, cachedPalm.position) < curlLimitSq)
+            curled++;
+
+        if (TryGetPose(XRHandJointID.RingTip, hand, ref cachedRing) &&
+            DistanceSq(cachedRing.position, cachedPalm.position) < curlLimitSq)
+            curled++;
 
         return curled >= 2;
     }
 
-    private void DetectSwipe(XRHandedness handedness)
+    private void DetectSwipe(XRHandedness hand, float now)
     {
-        if (Time.time - lastSwipeTime < swipeCooldown) return;
-
-        if (!TryGetJoint(XRHandJointID.Palm, handedness, out var palm))
+        if (now - lastSwipeTime < swipeCooldown)
             return;
 
-        Vector3 currentPos = palm.position;
-        float currentTime = Time.time;
+        if (!TryGetPose(XRHandJointID.Palm, hand, ref cachedPalm))
+            return;
 
-        if (leftPalmPrevPos == Vector3.zero)
+        Vector3 currentPos = cachedPalm.position;
+
+        if (!hasLeftPalmPrev)
         {
             leftPalmPrevPos = currentPos;
-            leftPalmPrevTime = currentTime;
+            leftPalmPrevTime = now;
+            hasLeftPalmPrev = true;
             return;
         }
 
         Vector3 delta = currentPos - leftPalmPrevPos;
-        float dt = Mathf.Max(0.001f, currentTime - leftPalmPrevTime);
-        float speed = delta.magnitude / dt;
+        float dt = now - leftPalmPrevTime;
+        if (dt < 0.001f)
+            dt = 0.001f;
 
-        // Prefer horizontal swipes with enough distance and speed
-        if (Mathf.Abs(delta.x) > swipeDistanceThreshold &&
-            Mathf.Abs(delta.x) > Mathf.Abs(delta.y) * 1.2f &&
+        float speed = delta.magnitude / dt;
+        float absX = delta.x < 0f ? -delta.x : delta.x;
+        float absY = delta.y < 0f ? -delta.y : delta.y;
+
+        if (absX > swipeDistanceThreshold &&
+            absX > absY * 1.2f &&
             speed > minSwipeSpeed)
         {
-            if (delta.x > 0)
+            if (delta.x > 0f)
             {
                 GameManager.Instance?.stanceManager?.SwitchStance(Stance.Ravager);
                 if (debugLogs) Debug.Log("[Shadowrift] Swipe Right → Ravager");
@@ -215,19 +249,52 @@ public class QuestHandGestureManager : MonoBehaviour
             }
 
             AudioManager.Instance?.PlayStanceSwitch();
-            TriggerHaptic(0.45f, 0.07f);
-            lastSwipeTime = Time.time;
+            lastSwipeTime = now;
         }
 
         leftPalmPrevPos = currentPos;
-        leftPalmPrevTime = currentTime;
+        leftPalmPrevTime = now;
     }
 
-    private bool TryGetJoint(XRHandJointID id, XRHandedness handedness, out Pose pose)
+    private void UpdateOpenPalmPhase(float now)
     {
-        pose = default;
-        if (handSubsystem.TryGetJoint(id, handedness, out var joint))
+        bool bothOpen = IsOpenPalm(XRHandedness.Left) && IsOpenPalm(XRHandedness.Right);
+
+        if (bothOpen)
         {
+            openPalmTimer += secondaryGestureInterval; // approximate hold time at reduced rate
+            if (openPalmTimer >= openPalmHoldTime && now - lastPhaseTime >= phaseCooldown)
+            {
+                TriggerPhase();
+                lastPhaseTime = now;
+                openPalmTimer = 0f;
+            }
+        }
+        else
+        {
+            openPalmTimer = 0f;
+        }
+    }
+
+    // -------------------- Math / joint helpers --------------------
+
+    private static float DistanceSq(Vector3 a, Vector3 b)
+    {
+        float dx = a.x - b.x;
+        float dy = a.y - b.y;
+        float dz = a.z - b.z;
+        return dx * dx + dy * dy + dz * dz;
+    }
+
+    private bool TryGetPose(XRHandJointID id, XRHandedness hand, ref Pose pose)
+    {
+        if (handSubsystem.TryGetJoint(id, hand, out var joint))
+        {
+            // Prefer tracked joints only when possible
+            if (joint.TryGetPose(out pose))
+                return true;
+
+            // Fallback: some runtimes still fill joint.pose
             pose = joint.pose;
             return true;
         }
@@ -240,32 +307,15 @@ public class QuestHandGestureManager : MonoBehaviour
     {
         GameManager.Instance?.loyaltyManager?.ModifyLoyalty(-2.0f);
         AudioManager.Instance?.PlayAttack();
-        TriggerHaptic(0.7f, 0.06f);
-        if (debugLogs) Debug.Log("[Shadowrift] Pinch → Voidblade Attack");
+        if (debugLogs)
+            Debug.Log("[Shadowrift] Pinch → Attack");
     }
 
     private void TriggerPhase()
     {
         GameManager.Instance?.phasingManager?.TogglePhase();
         AudioManager.Instance?.PlayPhase();
-        TriggerHaptic(0.85f, 0.12f);
-        if (debugLogs) Debug.Log("[Shadowrift] Open Palms → Phase Shift");
-    }
-
-    /// <summary>
-    /// Haptic feedback helper. Works with Meta XR / OpenXR when available.
-    /// Safe no-op if runtime does not support it.
-    /// </summary>
-    private void TriggerHaptic(float amplitude, float duration)
-    {
-        // Meta Quest path (if Meta XR SDK is present this can be expanded)
-        // OVRInput.SetControllerVibration(amplitude, amplitude, OVRInput.Controller.RTouch);
-
-        // OpenXR / generic: most projects use XR Interaction Toolkit haptic impulses on controllers.
-        // For pure hand tracking there is no standard haptic channel yet — kept as extension point.
         if (debugLogs)
-        {
-            // Intentionally quiet in production; useful while tuning
-        }
+            Debug.Log("[Shadowrift] Open Palms → Phase");
     }
 }
