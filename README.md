@@ -1,66 +1,63 @@
 # Shadowrift Chronicles
 
-**Unity 2D / 2.5D Action-Adventure Game**  
-Seamless dimensional phasing • Voidblade combat • Luna Loyalty system • Meta Quest VR support
+**Unity action-adventure** with seamless dimensional phasing, Voidblade stances, Luna Loyalty, and **Meta Quest 3 hand tracking**.
+
+Optimized for **Unity Hub** workflow and **Meta Quest 3** deployment.
 
 ---
 
-## Overview
+## Features
 
-Shadowrift Chronicles is a complete game prototype built from a full Game Design Document. Players control Zara Nightfall, a dimension-hopping mercenary who can phase between two overlapping realities while wielding the sentient Voidblade.
-
-### Core Features
-- **Dimensional Phasing** – Instantly switch between Base Reality and Phase Reality
-- **Voidblade Stances** – Ravager (aggressive), Sentinel (defensive), Harmonist (balanced)
-- **Luna Loyalty System** – Your actions affect Luna and determine one of three endings
-- **5 Distinct Realms** + Reality Storm final boss
-- **Multiple Enemy Types** with layer-based behavior
-- **Meta Quest Hand Tracking** – Natural gesture controls
-- Full UI, Audio, Health, Score, Save/Load, and Ending systems
+- Dimensional Phasing (instant layer switch)
+- Voidblade Stances: Ravager · Sentinel · Harmonist
+- Luna Loyalty system + multiple endings
+- 5 Realms + Reality Storm boss
+- Enemy variety, projectiles, score, health, save/load
+- **Meta Quest 3 hand gestures** (pinch, swipe, open palm, thumbs up)
+- Editor tools: Scene Generator, First Run Wizard, Project Validator, Sample Prefabs
 
 ---
 
-## Quick Start
+## Unity Hub — Quick Start
 
-### Requirements
-- Unity **6000.3 LTS** or newer
-- Template: **2D (URP)** recommended
-- Meta Quest 2 / 3 / 3S (for hand tracking)
+1. Install **Unity 6000.3 LTS** in Unity Hub with **Android Build Support**
+2. Clone this repo and **Add** the project in Unity Hub
+3. Open the project and wait for scripts to compile
+4. Install packages (see below)
+5. Menu: **Shadowrift → First Run Setup Wizard**
+6. Generate scenes + sample prefabs
+7. Switch platform to **Android** and Build and Run to Quest 3
 
-### Required Packages
-| Package                    | Purpose                        |
-|---------------------------|--------------------------------|
-| XR Plugin Management      | XR foundation                  |
-| OpenXR                    | Cross-platform XR              |
-| XR Hands                  | Hand tracking                  |
-| XR Interaction Toolkit    | Interactions                   |
-| Input System              | Modern input                   |
-| TextMeshPro                | UI text                        |
-| Meta XR Core SDK          | Best Quest support (optional)  |
-
-### Installation
-1. Clone the repository
-2. Open the project in Unity Hub
-3. Install the packages listed above via Package Manager
-4. Follow the **Scene Setup Guide** (`Docs/SCENE_SETUP.md`)
-5. Build for Android and deploy to your Meta Quest
+Full Quest 3 guide: [`Docs/QUEST3_SETUP.md`](Docs/QUEST3_SETUP.md)
 
 ---
 
-## Controls
+## Required Packages
 
-### Keyboard / Gamepad
-- **WASD / Left Stick** – Move
-- **Space / South Button** – Phase Shift
-- **1 / 2 / 3** – Switch Stances (Ravager / Sentinel / Harmonist)
+- Input System
+- XR Plugin Management
+- OpenXR
+- XR Hands
+- XR Interaction Toolkit
+- TextMeshPro
+- URP (if using 2D URP template)
+- Meta XR SDK (recommended for Quest 3)
 
-### Meta Quest Hand Tracking
-| Gesture                  | Action                      |
-|-------------------------|-----------------------------|
-| Right Hand Pinch        | Voidblade Attack            |
-| Left Hand Swipe Right   | Ravager Stance              |
-| Left Hand Swipe Left    | Sentinel Stance             |
-| Both Hands Open Palm    | Dimensional Phase Shift     |
+Validate anytime: **Shadowrift → Validate Project Setup**
+
+---
+
+## Meta Quest 3 Hand Controls
+
+| Gesture | Action |
+|---------|--------|
+| Right Hand **Pinch** | Attack |
+| Left Hand **Swipe Right** | Ravager stance |
+| Left Hand **Swipe Left** | Sentinel stance |
+| Right Hand **Thumbs Up** | Harmonist stance |
+| **Both hands open palm** (brief hold) | Phase shift |
+
+Keyboard fallback: WASD move, Space phase, 1/2/3 stances.
 
 ---
 
@@ -68,48 +65,34 @@ Shadowrift Chronicles is a complete game prototype built from a full Game Design
 
 ```
 Assets/
+├── Editor/          # Scene generator, wizard, validator, prefab tools
 ├── Scripts/
-│   ├── Core/               # GameManager, Phasing, Stance, Loyalty, Audio, Save, Realm systems
-│   ├── Mechanics/          # Player, Enemies, Projectiles, Hand Tracking, Boss
-│   └── UI/                 # UIManager, MainMenu, Ending
-├── Scenes/                 # Create realm scenes here
-├── Art/                    # Sprites, effects, UI art
-└── Prefabs/                # Enemy and projectile prefabs
+│   ├── Core/        # GameManager, Phasing, Stance, Loyalty, Audio, Realms
+│   ├── Mechanics/   # Player, enemies, projectiles, Quest hand tracking
+│   └── UI/          # HUD, menu, endings
+├── Scenes/          # Generated by tool
+└── Prefabs/Sample/  # Generated placeholders
+Docs/                # Setup, art, pitch, marketing, Quest 3 guide
 ```
-
----
-
-## Systems Included
-
-- GameManager (singleton)
-- PhasingManager
-- StanceManager
-- LoyaltyManager
-- PlayerController + PlayerHealth
-- QuestHandGestureManager (full hand tracking)
-- AggressiveEnemy / RangedEnemy / LoyaltyEnemy
-- Projectile system
-- EnemyDeathHandler + ScoreManager
-- RealityStormBoss + BossSpawner
-- EnemySpawner
-- RealmLoader + RealmProgression
-- AudioManager
-- UIManager
-- MainMenuController
-- EndingManager
-- SaveSystem
 
 ---
 
 ## Documentation
 
-- [Scene Setup Guide](Docs/SCENE_SETUP.md)
-- [Hand Tracking Setup](Assets/Scripts/Mechanics/HandTrackingSetup.md)
+| Doc | Description |
+|-----|-------------|
+| [QUEST3_SETUP.md](Docs/QUEST3_SETUP.md) | **Quest 3 + hand tracking (start here for headset)** |
+| [UNITY_INTEGRATION.md](Docs/UNITY_INTEGRATION.md) | Packages & project settings |
+| [FIRST_RUN.md](Docs/FIRST_RUN.md) | First-time wizard flow |
+| [SCENE_SETUP.md](Docs/SCENE_SETUP.md) | Manual scene layout |
+| [ART_DIRECTION.md](Docs/ART_DIRECTION.md) | Visual style |
+| [PITCH.md](Docs/PITCH.md) | Pitch document |
+| [MARKETING.md](Docs/MARKETING.md) | Marketing overview |
 
 ---
 
 ## License
 
-This project was created as a collaborative implementation of a full Game Design Document. You are free to use, modify, and expand it.
+Collaborative GDD implementation. Use and expand freely.
 
-**Shadowrift Chronicles** – Reality is a weapon. Use it wisely.
+**Tagline:** Reality is a weapon. Use it wisely.
