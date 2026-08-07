@@ -1,33 +1,41 @@
-# Shadowrift Chronicles – Art Direction
+# Shadowrift Chronicles — Art Direction
 
 ## Overall Visual Style
 
-**Genre Feel:** Dark multiverse action-adventure with neon-arcane cyberpunk energy.
+**Genre Feel:** Dark multiverse action-adventure with neon-arcane energy.
 
-The game sits between the visual language of *Control*, *Ratchet & Clank: Rift Apart*, and a more mature, grounded tone similar to *Devil May Cry* mixed with dimensional horror.
+Visual language sits between *Control*, *Ratchet & Clank: Rift Apart*, and a more mature character-action tone.
 
 ### Core Pillars
-- **Clear Layer Readability** – Players must instantly know which reality they are in
-- **High Contrast** – Strong silhouettes and readable combat feedback
-- **Neon + Arcane** – Technology and supernatural forces coexist
-- **Weight + Agility** – Zara should feel powerful but fluid
+- **Clear Layer Readability** — Players must instantly know which reality they are in
+- **High Contrast** — Strong silhouettes and readable combat feedback
+- **Neon + Arcane** — Technology and supernatural forces coexist
+- **Weight + Agility** — Zara should feel powerful but fluid
+
+See also: [ART_ASSET_LIST.md](ART_ASSET_LIST.md) for the full generated asset catalog and Unity folder paths.
 
 ---
 
 ## Color Language
 
-| Realm                  | Primary Palette                          | Mood                        |
-|------------------------|------------------------------------------|-----------------------------|
-| Neo-Arcadia            | Deep blues, magenta neon, wet asphalt    | Cyberpunk noir              |
-| The Wildlands          | Emerald greens, bioluminescent teal      | Ancient + alive             |
-| Clockwork Citadel      | Brass, steel grey, amber lights          | Mechanical, precise         |
-| Bone Desert            | Bleached bone, rust, sand                | Desolate, harsh             |
-| Crystal Sanctum        | Violet, cyan crystals, deep purple       | Mystical, dangerous         |
-| Reality Storm (Final)  | Chaotic mix of all colors + pure white tears | Overwhelming, climactic |
+| Realm | Primary Palette | Mood |
+|-------|-----------------|------|
+| Neo-Arcadia | Deep blues, magenta neon, wet asphalt | Cyberpunk noir |
+| The Wildlands | Emerald greens, bioluminescent teal | Ancient + alive |
+| Clockwork Citadel | Brass, steel grey, amber lights | Mechanical, precise |
+| Bone Desert | Bleached bone, rust, sand | Desolate, harsh |
+| Crystal Sanctum | Violet, cyan crystals, deep purple | Mystical, dangerous |
+| Reality Storm | Chaotic mix + pure white tears | Overwhelming, climactic |
 
 ### Layer Differentiation
-- **Base Reality**: More grounded, natural lighting, slightly desaturated
-- **Phase Reality**: Strong chromatic aberration, higher saturation, glowing edges, subtle glitch
+- **Base Reality:** Grounded lighting, slightly desaturated
+- **Phase Reality:** Chromatic aberration, higher saturation, glowing edges, subtle glitch
+
+### Brand Colors
+- Cyan `#00E5FF`
+- Violet `#A855F7`
+- Magenta `#FF2D95`
+- Background `#0A0A12`
 
 ---
 
@@ -36,22 +44,22 @@ The game sits between the visual language of *Control*, *Ratchet & Clank: Rift A
 ### Zara Nightfall
 - Athletic build, mid-20s
 - Practical combat clothing with dimensional tech accents
-- The **Voidblade** is a key visual element — it should feel alive (subtle pulsing, shifting energy)
-- Hair and cloth should react slightly when phasing
+- Voidblade is a key visual element — alive, pulsing
+- Hair and cloth react slightly when phasing
 
-### Luna
+### Luna Brightforge
 - Ethereal but not fragile
-- Soft light motifs that change intensity based on Loyalty
-- When Loyalty is low, her form becomes more fractured and unstable
+- Soft light motifs that change intensity with Loyalty
+- Low loyalty → more fractured / unstable form
 
 ---
 
 ## VFX Guidelines
 
-- **Phase Transition**: Fast (0.18s), chromatic flash + particle burst + short distortion
-- **Stance Switch**: Distinct color flash (Red = Ravager, Blue = Sentinel, Purple = Harmonist)
-- **Enemy Death**: Layer-colored particles + score popup
-- **Reality Storm**: Heavy particle density, screen tearing, floating debris from both realms
+- **Phase Transition:** Fast (0.18s), chromatic flash + particle burst + short distortion
+- **Stance Switch:** Color flash — Red Ravager, Blue Sentinel, Purple Harmonist
+- **Enemy Death:** Layer-colored particles + score popup
+- **Reality Storm:** Heavy particles, screen tearing, debris from both realms
 
 ---
 
@@ -59,10 +67,12 @@ The game sits between the visual language of *Control*, *Ratchet & Clank: Rift A
 
 - Clean, high-contrast HUD
 - Minimal clutter during combat
-- Loyalty meter should be one of the most readable elements on screen
-- Stance icons should clearly show the active stance
+- Loyalty meter highly readable
+- Stance icons clearly show active stance
+- Quest 3: icons remain clear at small angular size
 
 ---
 
 ## Reference Keywords
+
 `neon arcane`, `dimensional rift`, `bioluminescent`, `cyber-noir`, `elegant violence`, `layered reality`
